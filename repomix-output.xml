@@ -1,0 +1,1178 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.gitignore
+bin/insighta.js
+package.json
+README.MD
+src/commands/login.js
+src/commands/logout.js
+src/commands/profiles/create.js
+src/commands/profiles/export.js
+src/commands/profiles/get.js
+src/commands/profiles/list.js
+src/commands/profiles/search.js
+src/commands/whoami.js
+src/config.js
+src/lib/api.js
+src/lib/auth.js
+src/lib/display.js
+src/lib/pkce.js
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".gitignore">
+node_modules/
+.env
+dist/
+*.log
+</file>
+
+<file path="bin/insighta.js">
+#!/usr/bin/env node
+
+import { Command } from "commander";
+import chalk from "chalk";
+
+import { loginCommand }          from "../src/commands/login.js";
+import { logoutCommand }         from "../src/commands/logout.js";
+import { whoamiCommand }         from "../src/commands/whoami.js";
+import { profilesListCommand }   from "../src/commands/profiles/list.js";
+import { profilesGetCommand }    from "../src/commands/profiles/get.js";
+import { profilesSearchCommand } from "../src/commands/profiles/search.js";
+import { profilesCreateCommand } from "../src/commands/profiles/create.js";
+import { profilesExportCommand } from "../src/commands/profiles/export.js";
+
+const program = new Command();
+
+// ── Root ──────────────────────────────────────────────────────────────────
+program
+  .name("insighta")
+  .description(chalk.bold.cyan("Insighta Labs+") + " — CLI interface")
+  .version("1.0.0", "-v, --version", "Print version");
+
+// ── Auth commands ─────────────────────────────────────────────────────────
+program
+  .command("login")
+  .description("Log in via GitHub OAuth (opens browser)")
+  .action(loginCommand);
+
+program
+  .command("logout")
+  .description("Log out and clear local credentials")
+  .action(logoutCommand);
+
+program
+  .command("whoami")
+  .description("Show currently logged-in user")
+  .action(whoamiCommand);
+
+// ── Profiles sub-command group ────────────────────────────────────────────
+const profiles = program
+  .command("profiles")
+  .description("Manage and query profiles");
+
+profiles
+  .command("list")
+  .description("List profiles with optional filters")
+  .option("--gender <gender>",        "Filter by gender (male/female)")
+  .option("--country <code>",         "Filter by country code (e.g. NG)")
+  .option("--age-group <group>",      "Filter by age group (e.g. adult, youth)")
+  .option("--min-age <number>",       "Minimum age", parseInt)
+  .option("--max-age <number>",       "Maximum age", parseInt)
+  .option("--sort-by <field>",        "Sort field (e.g. age, name, created_at)")
+  .option("--order <direction>",      "Sort direction: asc or desc", "asc")
+  .option("--page <number>",          "Page number", parseInt)
+  .option("--limit <number>",         "Results per page", parseInt)
+  .action(profilesListCommand);
+
+profiles
+  .command("get <id>")
+  .description("Get a single profile by ID")
+  .action(profilesGetCommand);
+
+profiles
+  .command("search <query>")
+  .description('Natural language search (e.g. "young males from nigeria")')
+  .option("--page <number>",  "Page number", parseInt)
+  .option("--limit <number>", "Results per page", parseInt)
+  .action(profilesSearchCommand);
+
+profiles
+  .command("create")
+  .description("Create a new profile (admin only)")
+  .requiredOption("--name <name>", "Full name for the profile")
+  .action(profilesCreateCommand);
+
+profiles
+  .command("export")
+  .description("Export profiles to a file in the current directory")
+  .option("--format <format>",  "Export format (csv)", "csv")
+  .option("--gender <gender>",  "Filter by gender")
+  .option("--country <code>",   "Filter by country code")
+  .action(profilesExportCommand);
+
+// ── Global error handler ──────────────────────────────────────────────────
+program.configureOutput({
+  outputError: (str, write) => write(chalk.red(str)),
+});
+
+// Show help if no command given
+if (process.argv.length < 3) {
+  program.outputHelp();
+  process.exit(0);
+}
+
+program.parseAsync(process.argv).catch((err) => {
+  console.error(chalk.red("Fatal error:"), err.message);
+  process.exit(1);
+});
+</file>
+
+<file path="package.json">
+{
+  "name": "insighta-cli",
+  "version": "1.0.0",
+  "description": "CLI tool for Insighta Labs+ platform",
+  "type": "module",
+  "bin": {
+    "insighta": "./bin/insighta.js"
+  },
+  "scripts": {
+    "lint": "eslint src/ bin/",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest"
+  },
+  "keywords": ["insighta", "cli"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.0",
+    "chalk": "^5.3.0",
+    "cli-table3": "^0.6.3",
+    "columnify": "^1.6.0",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.5",
+    "open": "^10.1.0",
+    "ora": "^8.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+</file>
+
+<file path="README.MD">
+# Insighta Labs+ CLI
+
+Command-line interface for the Insighta Labs+ platform. Supports GitHub OAuth login, profile querying, searching, creating, and exporting.
+
+## Installation
+
+```bash
+git clone https://github.com/your-org/insighta-cli.git
+cd insighta-cli
+npm install
+npm link          # makes `insighta` available globally
+```
+
+## Configuration
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env`:
+
+```env
+API_BASE_URL=https://your-backend-url.com
+GITHUB_CLIENT_ID=your_github_client_id
+CLI_CALLBACK_PORT=9876
+```
+
+> `GITHUB_CLIENT_ID` must match the OAuth App registered in your GitHub account. The callback URL registered in GitHub must include `http://localhost:9876/callback`.
+
+## Usage
+
+### Auth
+
+```bash
+insighta login          # Opens browser for GitHub OAuth
+insighta logout         # Clears local session
+insighta whoami         # Show logged-in user info
+```
+
+### Profiles
+
+```bash
+# List (with optional filters)
+insighta profiles list
+insighta profiles list --gender male
+insighta profiles list --country NG --age-group adult
+insighta profiles list --min-age 25 --max-age 40
+insighta profiles list --sort-by age --order desc
+insighta profiles list --page 2 --limit 20
+
+# Get single profile
+insighta profiles get <id>
+
+# Natural language search
+insighta profiles search "young males from nigeria"
+
+# Create (admin only)
+insighta profiles create --name "Harriet Tubman"
+
+# Export to CSV (saved in current directory)
+insighta profiles export --format csv
+insighta profiles export --format csv --gender male --country NG
+```
+
+## Authentication Flow
+
+1. `insighta login` generates a PKCE `state`, `code_verifier`, and `code_challenge`
+2. A temporary local HTTP server starts on `localhost:9876`
+3. Your browser opens GitHub's OAuth page
+4. After you authorize, GitHub redirects to `http://localhost:9876/callback`
+5. The CLI captures the `code`, validates `state`, then sends `code + code_verifier` to `POST /auth/cli/callback`
+6. The backend exchanges the code with GitHub, creates/updates your user, and returns `access_token + refresh_token`
+7. Tokens are stored at `~/.insighta/credentials.json` (mode 0600)
+
+## Token Handling
+
+- Access tokens expire in **3 minutes**
+- Refresh tokens expire in **5 minutes**
+- On any `401`, the CLI automatically attempts one token refresh before prompting re-login
+- On logout, the refresh token is invalidated server-side
+
+## Credentials Storage
+
+```
+~/.insighta/credentials.json
+```
+
+File permissions are set to `0600` (owner read/write only).
+</file>
+
+<file path="src/commands/login.js">
+// Login command
+import http from "http";
+import { config } from "../config.js";
+import {
+  generateState,
+  generateCodeVerifier,
+  generateCodeChallenge,
+} from "../lib/pkce.js";
+import { writeCredentials } from "../lib/auth.js";
+import { createSpinner, printSuccess, printError } from "../lib/display.js";
+import chalk from "chalk";
+import axios from "axios";
+import open from "open";
+
+export const loginCommand = async () => {
+  // ── 1. Generate PKCE values ──────────────────────────────────────────
+  const state = generateState();
+  const codeVerifier = generateCodeVerifier();
+  const codeChallenge = generateCodeChallenge(codeVerifier);
+
+  // ── 2. Build GitHub authorization URL via your backend ───────────────
+  //    We construct it client-side so we can supply our own redirect_uri
+  //    pointing at the local callback server.
+  const callbackUrl = `http://localhost:${config.callbackPort}${config.callbackPath}`;
+
+  // Ask the backend for the base GitHub OAuth URL params — but since
+  // /auth/github does a redirect (for web flow), we build the URL
+  // ourselves using the same parameters the backend uses.
+  // The CLI callback endpoint is POST /auth/cli/callback.
+  const githubAuthUrl = buildGitHubUrl(state, codeChallenge, callbackUrl);
+
+  // ── 3. Start local callback server ───────────────────────────────────
+  let resolveCallback, rejectCallback;
+  const callbackPromise = new Promise((res, rej) => {
+    resolveCallback = res;
+    rejectCallback = rej;
+  });
+
+  const server = http.createServer((req, res) => {
+    const url = new URL(req.url, `http://localhost:${config.callbackPort}`);
+
+    if (url.pathname !== config.callbackPath) {
+      res.writeHead(404);
+      res.end("Not found");
+      return;
+    }
+
+    const code = url.searchParams.get("code");
+    const returnedState = url.searchParams.get("state");
+    const error = url.searchParams.get("error");
+
+    // Send a friendly HTML response to the browser
+    res.writeHead(200, { "Content-Type": "text/html" });
+    res.end(callbackHtml(error ? false : true));
+
+    server.close();
+
+    if (error || !code) {
+      rejectCallback(new Error(error || "Authorization denied"));
+      return;
+    }
+
+    if (returnedState !== state) {
+      rejectCallback(new Error("State mismatch — possible CSRF attack"));
+      return;
+    }
+
+    resolveCallback(code);
+  });
+
+  server.listen(config.callbackPort);
+
+  // Handle server errors (e.g. port already in use)
+  server.on("error", (err) => {
+    rejectCallback(err);
+  });
+
+  // ── 4. Open GitHub in the browser ────────────────────────────────────
+  console.log();
+  console.log(chalk.bold("  Insighta Labs+ Login"));
+  console.log(chalk.grey("  " + "─".repeat(36)));
+  console.log(chalk.dim("  Opening GitHub in your browser..."));
+  console.log();
+
+  await open(githubAuthUrl);
+
+  const spinner = createSpinner("Waiting for GitHub authorization...").start();
+
+  // ── 5. Wait for the callback ──────────────────────────────────────────
+  let code;
+  try {
+    // Timeout after 2 minutes
+    code = await Promise.race([
+      callbackPromise,
+      timeout(120_000, "Authorization timed out after 2 minutes"),
+    ]);
+  } catch (err) {
+    spinner.fail(err.message);
+    server.close();
+    process.exit(1);
+  }
+
+  spinner.text = "Exchanging code with backend...";
+
+  // ── 6. Send code + code_verifier to your backend ─────────────────────
+  let tokens;
+  try {
+    const response = await axios.post(
+      `${config.apiBaseUrl}/auth/cli/callback`,
+      { code, code_verifier: codeVerifier },
+      { headers: { "Content-Type": "application/json" } }
+    );
+    tokens = response.data;
+  } catch (err) {
+    spinner.fail(
+      "Backend token exchange failed: " +
+        (err?.response?.data?.message || err.message)
+    );
+    process.exit(1);
+  }
+
+  // ── 7. Store tokens locally ───────────────────────────────────────────
+  const credentials = {
+    access_token: tokens.access_token,
+    refresh_token: tokens.refresh_token,
+  };
+  writeCredentials(credentials);
+
+  // ── 8. Fetch user info to confirm login ──────────────────────────────
+  let username = "unknown";
+  try {
+    const { api } = await import("../lib/api.js");
+    const meResponse = await api.get("/auth/me");
+    username = meResponse.data?.username || "unknown";
+  } catch {
+    // non-fatal — we still logged in
+  }
+
+  spinner.stop();
+  console.log();
+  printSuccess(
+    chalk.bold(`Logged in as `) + chalk.cyan(`@${username}`)
+  );
+  console.log();
+};
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+const buildGitHubUrl = (state, codeChallenge, redirectUri) => {
+  const clientId = process.env.GITHUB_CLIENT_ID;
+
+  if (!clientId) {
+    printError(
+      "GITHUB_CLIENT_ID is not set in your .env file.\n" +
+        "  Create a .env file with: GITHUB_CLIENT_ID=your_client_id"
+    );
+    process.exit(1);
+  }
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    scope: "read:user user:email",
+    state,
+    code_challenge: codeChallenge,
+    code_challenge_method: "S256",
+  });
+
+  return `https://github.com/login/oauth/authorize?${params.toString()}`;
+};
+
+const timeout = (ms, message) =>
+  new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(message)), ms)
+  );
+
+const callbackHtml = (success) => `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Insighta Labs+</title>
+  <style>
+    body { font-family: system-ui, sans-serif; display: flex; align-items: center;
+           justify-content: center; height: 100vh; margin: 0; background: #0d1117; color: #c9d1d9; }
+    .card { text-align: center; padding: 2rem; border: 1px solid #30363d;
+            border-radius: 12px; max-width: 360px; }
+    h2 { color: ${success ? "#3fb950" : "#f85149"}; margin-bottom: .5rem; }
+    p  { color: #8b949e; font-size: .95rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>${success ? "✔ Login Successful" : "✖ Login Failed"}</h2>
+    <p>${success ? "You can close this tab and return to the terminal." : "Something went wrong. Please try again."}</p>
+  </div>
+</body>
+</html>`;
+</file>
+
+<file path="src/commands/logout.js">
+// Logout command
+import { api } from "../lib/api.js";
+import { clearCredentials, readCredentials } from "../lib/auth.js";
+import { createSpinner, printSuccess, printError } from "../lib/display.js";
+
+export const logoutCommand = async () => {
+  const creds = readCredentials();
+  if (!creds?.access_token) {
+    printError("You are not logged in.");
+    process.exit(1);
+  }
+
+  const spinner = createSpinner("Logging out...").start();
+
+  try {
+    await api.post("/auth/logout");
+    spinner.stop();
+  } catch (err) {
+    // Even if the server call fails, clear local credentials
+    spinner.stop();
+    const status = err?.response?.status;
+    if (status !== 401) {
+      // 401 just means token was already expired — still log out locally
+      printError(
+        "Server logout failed: " +
+          (err?.response?.data?.message || err.message)
+      );
+    }
+  }
+
+  clearCredentials();
+  printSuccess("Logged out successfully.");
+};
+</file>
+
+<file path="src/commands/profiles/create.js">
+// Create profile command
+import { api } from "../../lib/api.js";
+import { requireAuth } from "../../lib/auth.js";
+import {
+  createSpinner,
+  printProfileDetail,
+  printSuccess,
+  printError,
+  extractErrorMessage,
+} from "../../lib/display.js";
+import chalk from "chalk";
+
+export const profilesCreateCommand = async (options) => {
+  await requireAuth();
+
+  if (!options.name || options.name.trim() === "") {
+    printError('A name is required. Usage: insighta profiles create --name "Full Name"');
+    process.exit(1);
+  }
+
+  const spinner = createSpinner(
+    `Creating profile for "${options.name}"...`
+  ).start();
+
+  try {
+    const response = await api.post("/api/profiles", {
+      name: options.name.trim(),
+    });
+    spinner.stop();
+
+    printSuccess(
+      `Profile created: ` + chalk.cyan(options.name)
+    );
+    printProfileDetail(response.data.data);
+  } catch (err) {
+    spinner.fail("Failed to create profile");
+    const status = err?.response?.status;
+    if (status === 403) {
+      printError("Only admins can create profiles.");
+    } else if (status === 409) {
+      printError(`A profile with the name "${options.name}" already exists.`);
+    } else {
+      printError(extractErrorMessage(err));
+    }
+    process.exit(1);
+  }
+};
+</file>
+
+<file path="src/commands/profiles/export.js">
+// Export profiles command
+import fs from "fs";
+import path from "path";
+import { api } from "../../lib/api.js";
+import { requireAuth } from "../../lib/auth.js";
+import {
+  createSpinner,
+  printSuccess,
+  printError,
+  extractErrorMessage,
+} from "../../lib/display.js";
+import chalk from "chalk";
+
+export const profilesExportCommand = async (options) => {
+  await requireAuth();
+
+  const format = options.format || "csv";
+
+  if (format !== "csv") {
+    printError(`Unsupported format "${format}". Currently only "csv" is supported.`);
+    process.exit(1);
+  }
+
+  const spinner = createSpinner("Exporting profiles...").start();
+
+  // Build optional filters
+  const params = { format };
+  if (options.gender)  params.gender  = options.gender;
+  if (options.country) params.country = options.country;
+
+  try {
+    const response = await api.get("/api/profiles/export", {
+      params,
+      responseType: "text", // raw CSV text
+    });
+
+    spinner.stop();
+
+    // Save to current working directory
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    const filename = `insighta-profiles-${timestamp}.csv`;
+    const outputPath = path.join(process.cwd(), filename);
+
+    fs.writeFileSync(outputPath, response.data, "utf-8");
+
+    printSuccess(
+      `Exported to: ` + chalk.cyan(outputPath)
+    );
+  } catch (err) {
+    spinner.fail("Export failed");
+    printError(extractErrorMessage(err));
+    process.exit(1);
+  }
+};
+</file>
+
+<file path="src/commands/profiles/get.js">
+// Get profile command
+import { api } from "../../lib/api.js";
+import { requireAuth } from "../../lib/auth.js";
+import {
+  createSpinner,
+  printProfileDetail,
+  printError,
+  extractErrorMessage,
+} from "../../lib/display.js";
+
+export const profilesGetCommand = async (id) => {
+  await requireAuth();
+
+  if (!id) {
+    printError("Profile ID is required. Usage: insighta profiles get <id>");
+    process.exit(1);
+  }
+
+  const spinner = createSpinner(`Fetching profile ${id}...`).start();
+
+  try {
+    const response = await api.get(`/api/profiles/${id}`);
+    spinner.stop();
+
+    printProfileDetail(response.data.data);
+  } catch (err) {
+    spinner.fail("Failed to fetch profile");
+    const status = err?.response?.status;
+    if (status === 404) {
+      printError(`Profile with ID "${id}" not found.`);
+    } else {
+      printError(extractErrorMessage(err));
+    }
+    process.exit(1);
+  }
+};
+</file>
+
+<file path="src/commands/profiles/list.js">
+// List profiles command
+import { api } from "../../lib/api.js";
+import { requireAuth } from "../../lib/auth.js";
+import {
+  createSpinner,
+  printProfilesTable,
+  printPagination,
+  printError,
+  printWarning,
+  extractErrorMessage,
+} from "../../lib/display.js";
+
+export const profilesListCommand = async (options) => {
+  await requireAuth();
+
+  const spinner = createSpinner("Fetching profiles...").start();
+
+  // Build query params from CLI flags
+  const params = {};
+  if (options.gender)   params.gender   = options.gender;
+  if (options.country)  params.country  = options.country;
+  if (options.ageGroup) params.age_group = options.ageGroup;
+  if (options.minAge)   params.min_age  = options.minAge;
+  if (options.maxAge)   params.max_age  = options.maxAge;
+  if (options.sortBy)   params.sort_by  = options.sortBy;
+  if (options.order)    params.order    = options.order;
+  if (options.page)     params.page     = options.page;
+  if (options.limit)    params.limit    = options.limit;
+
+  try {
+    const response = await api.get("/api/profiles", { params });
+    spinner.stop();
+
+    const { data, page, limit, total } = response.data;
+
+    if (!data || data.length === 0) {
+      printWarning("No profiles match your filters.");
+      return;
+    }
+
+    console.log();
+    printProfilesTable(data);
+    console.log();
+    printPagination({ page, limit, total });
+    console.log();
+  } catch (err) {
+    spinner.fail("Failed to fetch profiles");
+    printError(extractErrorMessage(err));
+    process.exit(1);
+  }
+};
+</file>
+
+<file path="src/commands/profiles/search.js">
+// Search profiles command
+import { api } from "../../lib/api.js";
+import { requireAuth } from "../../lib/auth.js";
+import {
+  createSpinner,
+  printProfilesTable,
+  printPagination,
+  printError,
+  printWarning,
+  extractErrorMessage,
+} from "../../lib/display.js";
+import chalk from "chalk";
+
+export const profilesSearchCommand = async (query, options) => {
+  await requireAuth();
+
+  if (!query || query.trim() === "") {
+    printError('A search query is required. Usage: insighta profiles search "your query"');
+    process.exit(1);
+  }
+
+  const spinner = createSpinner(`Searching: "${query}"...`).start();
+
+  try {
+    const response = await api.get("/api/profiles/search", {
+      params: {
+        q: query,
+        page: options.page || 1,
+        limit: options.limit || 10,
+      },
+    });
+    spinner.stop();
+
+    const { data, page, limit, total } = response.data;
+
+    if (!data || data.length === 0) {
+      printWarning(`No profiles found for: "${query}"`);
+      return;
+    }
+
+    console.log();
+    console.log(chalk.dim(`  Results for: `) + chalk.cyan(`"${query}"`));
+    console.log();
+    printProfilesTable(data);
+    console.log();
+    printPagination({ page, limit, total });
+    console.log();
+  } catch (err) {
+    spinner.fail("Search failed");
+    printError(extractErrorMessage(err));
+    process.exit(1);
+  }
+};
+</file>
+
+<file path="src/commands/whoami.js">
+// Whoami command
+import { api } from "../lib/api.js";
+import { requireAuth } from "../lib/auth.js";
+import {
+  createSpinner,
+  printError,
+  printInfo,
+  extractErrorMessage,
+} from "../lib/display.js";
+import chalk from "chalk";
+
+export const whoamiCommand = async () => {
+  await requireAuth();
+
+  const spinner = createSpinner("Fetching your profile...").start();
+
+  try {
+    const response = await api.get("/auth/me");
+    spinner.stop();
+
+    const user = response.data;
+
+    console.log();
+    console.log(chalk.bold.cyan("  Logged in as"));
+    console.log(chalk.grey("  " + "─".repeat(36)));
+    printInfo("  Username:", `@${user.username}`);
+    printInfo("  Email:", user.email);
+    printInfo(
+      "  Role:",
+      user.role === "admin"
+        ? chalk.red(user.role)
+        : chalk.blue(user.role)
+    );
+    printInfo("  Status:", user.is_active ? chalk.green("active") : chalk.red("deactivated"));
+    printInfo("  Member since:", new Date(user.created_at).toLocaleDateString());
+    console.log();
+  } catch (err) {
+    spinner.fail("Failed to fetch user info");
+    printError(extractErrorMessage(err));
+    process.exit(1);
+  }
+};
+</file>
+
+<file path="src/config.js">
+// Configuration module
+import dotenv from "dotenv";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: join(__dirname, "../.env") });
+
+export const config = {
+  apiBaseUrl: process.env.API_BASE_URL || "http://localhost:3000",
+  credentialsPath: join(
+    process.env.HOME || process.env.USERPROFILE || "~",
+    ".insighta",
+    "credentials.json"
+  ),
+  callbackPort: parseInt(process.env.CLI_CALLBACK_PORT || "9876"),
+  callbackPath: "/callback",
+};
+</file>
+
+<file path="src/lib/api.js">
+// API module
+import axios from "axios";
+import { config } from "../config.js";
+import {
+  readCredentials,
+  refreshTokens,
+  clearCredentials,
+} from "./auth.js";
+
+/**
+ * Creates a pre-configured axios instance that:
+ * - Attaches Bearer token to every request
+ * - Attaches X-API-Version header to every request
+ * - On 401: attempts one token refresh and retries
+ * - On second 401: clears credentials and exits
+ */
+const createApiClient = () => {
+  const client = axios.create({
+    baseURL: config.apiBaseUrl,
+    headers: {
+      "Content-Type": "application/json",
+      "X-API-Version": "1",
+    },
+  });
+
+  // Request interceptor — attach current access token
+  client.interceptors.request.use((requestConfig) => {
+    const creds = readCredentials();
+    if (creds?.access_token) {
+      requestConfig.headers["Authorization"] = `Bearer ${creds.access_token}`;
+    }
+    return requestConfig;
+  });
+
+  // Response interceptor — handle 401 with one refresh attempt
+  client.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      const originalRequest = error.config;
+
+      if (error.response?.status === 401 && !originalRequest._retried) {
+        originalRequest._retried = true;
+
+        const newCreds = await refreshTokens();
+
+        if (newCreds) {
+          // Retry original request with new token
+          originalRequest.headers[
+            "Authorization"
+          ] = `Bearer ${newCreds.access_token}`;
+          return client(originalRequest);
+        }
+
+        // Refresh also failed — session is dead
+        clearCredentials();
+        const chalk = (await import("chalk")).default;
+        console.error(
+          chalk.red("\n✖ Session expired.") + " Please run: insighta login"
+        );
+        process.exit(1);
+      }
+
+      return Promise.reject(error);
+    }
+  );
+
+  return client;
+};
+
+export const api = createApiClient();
+</file>
+
+<file path="src/lib/auth.js">
+// Authentication module
+import fs from "fs";
+import path from "path";
+import { config } from "../config.js";
+
+/**
+ * Read credentials from ~/.insighta/credentials.json
+ * Returns null if file doesn't exist or is malformed.
+ */
+export const readCredentials = () => {
+  try {
+    if (!fs.existsSync(config.credentialsPath)) return null;
+    const raw = fs.readFileSync(config.credentialsPath, "utf-8");
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Write credentials to ~/.insighta/credentials.json
+ * Creates the directory if it doesn't exist.
+ */
+export const writeCredentials = (credentials) => {
+  const dir = path.dirname(config.credentialsPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  fs.writeFileSync(
+    config.credentialsPath,
+    JSON.stringify(credentials, null, 2),
+    { mode: 0o600 } // owner-read-only for security
+  );
+};
+
+/**
+ * Clear stored credentials (logout).
+ */
+export const clearCredentials = () => {
+  if (fs.existsSync(config.credentialsPath)) {
+    fs.unlinkSync(config.credentialsPath);
+  }
+};
+
+/**
+ * Attempt to refresh the access token using the stored refresh token.
+ * Returns the new credentials on success, null on failure.
+ */
+export const refreshTokens = async () => {
+  const creds = readCredentials();
+  if (!creds?.refresh_token) return null;
+
+  try {
+    const { default: axios } = await import("axios");
+    const response = await axios.post(
+      `${config.apiBaseUrl}/auth/refresh`,
+      { refresh_token: creds.refresh_token },
+      { headers: { "Content-Type": "application/json" } }
+    );
+
+    const { access_token, refresh_token } = response.data;
+    const newCreds = {
+      ...creds,
+      access_token,
+      refresh_token,
+    };
+    writeCredentials(newCreds);
+    return newCreds;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Get a valid access token.
+ * Auto-refreshes if needed. Returns null if not authenticated.
+ */
+export const getValidAccessToken = async () => {
+  const creds = readCredentials();
+  if (!creds?.access_token) return null;
+
+  // Optimistically try to use the existing token.
+  // The API interceptor in api.js handles 401s and retries once.
+  return creds.access_token;
+};
+
+/**
+ * Require authentication — exit with a helpful message if not logged in.
+ */
+export const requireAuth = async () => {
+  const token = await getValidAccessToken();
+  if (!token) {
+    const chalk = (await import("chalk")).default;
+    console.error(chalk.red("✖ Not logged in.") + " Run: insighta login");
+    process.exit(1);
+  }
+  return token;
+};
+</file>
+
+<file path="src/lib/display.js">
+// Display module
+import chalk from "chalk";
+import Table from "cli-table3";
+import ora from "ora";
+
+/**
+ * Creates and returns an ora spinner.
+ */
+export const createSpinner = (text) => {
+  return ora({ text, color: "cyan" });
+};
+
+/**
+ * Print a success message.
+ */
+export const printSuccess = (msg) => {
+  console.log(chalk.green("✔") + " " + msg);
+};
+
+/**
+ * Print an error message.
+ */
+export const printError = (msg) => {
+  console.error(chalk.red("✖") + " " + msg);
+};
+
+/**
+ * Print a warning message.
+ */
+export const printWarning = (msg) => {
+  console.warn(chalk.yellow("⚠") + " " + msg);
+};
+
+/**
+ * Print a formatted info line.
+ */
+export const printInfo = (label, value) => {
+  console.log(chalk.cyan(label.padEnd(16)) + chalk.white(value ?? "—"));
+};
+
+/**
+ * Render an array of profile objects as a rich table.
+ */
+export const printProfilesTable = (profiles) => {
+  if (!profiles || profiles.length === 0) {
+    console.log(chalk.yellow("No profiles found."));
+    return;
+  }
+
+  const table = new Table({
+    head: [
+      chalk.bold.cyan("ID"),
+      chalk.bold.cyan("Name"),
+      chalk.bold.cyan("Gender"),
+      chalk.bold.cyan("Age"),
+      chalk.bold.cyan("Age Group"),
+      chalk.bold.cyan("Country"),
+    ],
+    colWidths: [38, 22, 10, 6, 12, 14],
+    style: { head: [], border: ["grey"] },
+    wordWrap: true,
+  });
+
+  for (const p of profiles) {
+    table.push([
+      chalk.dim(p.id),
+      chalk.white(p.name),
+      p.gender === "male" ? chalk.blue(p.gender) : chalk.magenta(p.gender),
+      String(p.age ?? "—"),
+      chalk.dim(p.age_group ?? "—"),
+      chalk.yellow(p.country_name ?? p.country_id ?? "—"),
+    ]);
+  }
+
+  console.log(table.toString());
+};
+
+/**
+ * Render a single profile as a detail card.
+ */
+export const printProfileDetail = (p) => {
+  console.log();
+  console.log(chalk.bold.cyan("  Profile Detail"));
+  console.log(chalk.grey("  " + "─".repeat(40)));
+  printInfo("  ID:", p.id);
+  printInfo("  Name:", p.name);
+  printInfo("  Gender:", p.gender);
+  printInfo("  Age:", String(p.age ?? "—"));
+  printInfo("  Age Group:", p.age_group);
+  printInfo("  Country:", p.country_name ?? p.country_id);
+  printInfo("  Created:", new Date(p.created_at).toLocaleString());
+  console.log();
+};
+
+/**
+ * Render pagination metadata.
+ */
+export const printPagination = ({ page, limit, total }) => {
+  const totalPages = Math.ceil(total / limit);
+  console.log(
+    chalk.dim(
+      `  Page ${page} of ${totalPages} · ${total} total result${total !== 1 ? "s" : ""}`
+    )
+  );
+};
+
+/**
+ * Extract a human-readable error message from an axios error.
+ */
+export const extractErrorMessage = (error) => {
+  return (
+    error?.response?.data?.message ||
+    error?.message ||
+    "An unexpected error occurred"
+  );
+};
+</file>
+
+<file path="src/lib/pkce.js">
+// PKCE (Proof Key for Code Exchange) module
+import crypto from "crypto";
+
+export const generateCodeVerifier = () => {
+  const buffer = crypto.randomBytes(32);
+  return base64URLEncode(buffer);
+};
+
+export const generateCodeChallenge = (verifier) => {
+  const hash = crypto.createHash("sha256").update(verifier).digest();
+  return base64URLEncode(hash);
+};
+
+export const generateState = () => {
+  return crypto.randomBytes(16).toString("hex");
+};
+
+const base64URLEncode = (buffer) => {
+  return buffer
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
+};
+</file>
+
+</files>
