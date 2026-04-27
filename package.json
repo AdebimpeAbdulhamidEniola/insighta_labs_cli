@@ -1,0 +1,32 @@
+{
+  "name": "insighta-cli",
+  "version": "1.0.0",
+  "description": "CLI tool for Insighta Labs+ platform",
+  "type": "module",
+  "bin": {
+    "insighta": "./bin/insighta.js"
+  },
+  "scripts": {
+    "lint": "eslint src/ bin/",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest"
+  },
+  "keywords": ["insighta", "cli"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.0",
+    "chalk": "^5.3.0",
+    "cli-table3": "^0.6.3",
+    "columnify": "^1.6.0",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.5",
+    "open": "^10.1.0",
+    "ora": "^8.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
