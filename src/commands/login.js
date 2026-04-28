@@ -107,7 +107,11 @@ export const loginCommand = async () => {
   try {
     const response = await axios.post(
       `${config.apiBaseUrl}/auth/cli/callback`,
-      { code, code_verifier: codeVerifier },
+      { 
+        code, 
+        code_verifier: codeVerifier,
+        redirect_uri: callbackUrl
+      },
       { headers: { "Content-Type": "application/json" } }
     );
     tokens = response.data;
